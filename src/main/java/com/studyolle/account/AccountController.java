@@ -26,7 +26,7 @@ public class AccountController {
     private final AccountService accountService;
     private final AccountRepository accountRepository;
 
-    @InitBinder("SignUpForm") //form의class이름이랑 자동 맵핑이 됨. Validation을 체크해줌.
+    @InitBinder("signUpForm")
     public void initBinder(WebDataBinder webDataBinder) {
         webDataBinder.addValidators(signUpFormValidator);
     }
@@ -47,13 +47,11 @@ public class AccountController {
 //        if (errors.hasErrors()) {
 //            return "account/sign-up";
 //        }
-        accountService.processNewAccount(signUpForm);
         Account account = accountService.processNewAccount(signUpForm);
         accountService.login(account);
 
         return "redirect:/";
     }
-
 
     @GetMapping("/check-email-token")
     public String checkEmailToken(String token, String email, Model model) {
@@ -77,7 +75,28 @@ public class AccountController {
         model.addAttribute("nickname", account.getNickName());
         return view;
 
+    }
+
+    @GetMapping("/check-email")
+    public String checkEmail(@CurrentUser Account account, Model model) {
+
+        model.addAttribute("email", account.getEmail());
+
+        return "account/check-email";
+    }
 
 
+    @GetMapping("/resend-confirm-email")
+    public String resendConfirmEmail(@CurrentUser Account account, Model model) {
+        String view = "account/check-email";
+        if (!account.getEmailCheckTokenGeneratedAt().isBefore(LocalDateTime.now().minusHours(1))) {
+            model.addAttribute("error", "1시간에 한번만 인증가능합니다.");
+            model.addAttribute("email", account.getEmail());
+        } else {
+            view = "redirect:/";
+            accountService.sendSignUpConfirmEmail(account);
+        }
+
+        return view;
     }
 }
