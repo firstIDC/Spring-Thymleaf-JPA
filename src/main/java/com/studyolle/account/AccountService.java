@@ -26,7 +26,8 @@ public class AccountService implements UserDetailsService {
     private final JavaMailSender javaMailSender;
     private final PasswordEncoder passwordEncoder;
 
-    @Transactional
+    //readOnly = true를 붙이는 이유, select만 할 경우는 write락을 안걸기때문에, 성능면에서 향상함.
+    @Transactional(readOnly = true)
     public Account processNewAccount(SignUpForm signUpForm) {
         Account newAccount = saveNewAccount(signUpForm);
         newAccount.generateEmailCheckToken();
